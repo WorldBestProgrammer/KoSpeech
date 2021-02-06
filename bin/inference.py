@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+#function으로 만든다.
 import argparse
 import torch
 import torch.nn as nn
@@ -30,10 +30,14 @@ from kospeech.models import (
 )
 
 
-def parse_audio(audio_path: str, del_silence: bool = False, audio_extension: str = 'pcm') -> Tensor:
-    signal = load_audio(audio_path, del_silence, extension=audio_extension)
+def parse_audio(audio_data, del_silence: bool = False, audio_extension: str = 'pcm') -> Tensor:
+    #signal = load_audio(audio_path, del_silence, extension=audio_extension)
+    flac_data = audio_data.get_flac_data(
+            convert_rate=None if audio_data.sample_rate >= 8000 else 8000,  # audio samples must be at least 8 kHz
+            convert_width=2  # audio samples must be 16-bit
+        )
     feature = torchaudio.compliance.kaldi.fbank(
-        waveform=Tensor(signal).unsqueeze(0),
+        waveform=Tensor(flac_data).unsqueeze(0),
         num_mel_bins=80,
         frame_length=20,
         frame_shift=10,
@@ -45,7 +49,7 @@ def parse_audio(audio_path: str, del_silence: bool = False, audio_extension: str
 
     return torch.FloatTensor(feature).transpose(0, 1)
 
-
+##
 parser = argparse.ArgumentParser(description='KoSpeech')
 parser.add_argument('--model_path', type=str, require=True)
 parser.add_argument('--audio_path', type=str, require=True)
